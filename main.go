@@ -36,6 +36,8 @@ func main() {
 		// NOTE: printing to stderr ensures the error is visible even when stdout
 		// is piped or redirected (e.g. in CI pipelines).
 		fmt.Fprintf(os.Stderr, "\nError: %s\n", err.Error())
+		// Also log the full stack trace at debug level to help with troubleshooting.
+		// Run with TG_LOG=debug to see the full trace.
 		logger.Debugf("%+v\n", err)
 		os.Exit(1)
 	}
