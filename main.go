@@ -33,7 +33,9 @@ func main() {
 		}
 
 		// For all other errors, print the error message and exit with code 1.
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		// NOTE: printing to stderr ensures the error is visible even when stdout
+		// is piped or redirected (e.g. in CI pipelines).
+		fmt.Fprintf(os.Stderr, "\nError: %s\n", err.Error())
 		logger.Debugf("%+v\n", err)
 		os.Exit(1)
 	}
