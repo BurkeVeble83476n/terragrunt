@@ -1,91 +1,48 @@
+// Package main is the entry point for Terragrunt, a thin wrapper for Terraform
+// that provides extra tools for working with multiple Terraform modules.
 package main
 
 import (
-	"context"
+	"fmt"
 	"os"
 
-	"github.com/gruntwork-io/terragrunt/internal/cli"
-	"github.com/gruntwork-io/terragrunt/internal/cli/flags/global"
-	"github.com/gruntwork-io/terragrunt/internal/errors"
-	"github.com/gruntwork-io/terragrunt/internal/shell"
-	"github.com/gruntwork-io/terragrunt/internal/tf"
-	"github.com/gruntwork-io/terragrunt/internal/util"
-	"github.com/gruntwork-io/terragrunt/pkg/log"
-	"github.com/gruntwork-io/terragrunt/pkg/log/format"
-	"github.com/gruntwork-io/terragrunt/pkg/options"
+	"github.com/gruntwork-io/terragrunt/cli"
+	"github.com/gruntwork-io/terragrunt/errors"
+	"github.com/gruntwork-io/terragrunt/shell"
+	"github.com/gruntwork-io/terragrunt/util"
 )
 
-// The main entrypoint for Terragrunt
+// VERSION is the current version of Terragrunt.
+// This is set at build time via ldflags:
+//
+//	-ldflags "-X main.VERSION=x.y.z"
+var VERSION = "dev"
+
 func main() {
-	exitCode := tf.NewDetailedExitCodeMap()
+	// Configure the logger to write to stderr so that stdout can be used for
+	// Terraform output without interference.
+	logger := util.CreateLogger("")
 
-	opts := options.NewTerragruntOptions()
+	// Run the CLI and handle any errors.
+	if err := runApp(os.Args, logger); err != nil {
+		// Check if the error is a shell exit error, and if so, exit with the
+		// same exit code as the underlying process.
+		var exitErr *shell.ProcessExitError
+		if ok := errors.As(err, &exitErr); ok {
+			os.Exit(exitErr.ExitCode)
+		}
 
-	l := log.New(
-		log.WithOutput(opts.Writers.ErrWriter),
-		log.WithLevel(options.DefaultLogLevel),
-		log.WithFormatter(format.NewFormatter(format.NewPrettyFormatPlaceholders())),
-	)
-
-	// Immediately parse the `TG_LOG_LEVEL` environment variable, e.g. to set the TRACE level.
-	if err := global.NewLogLevelFlag(l, opts, nil).Parse(os.Args); err != nil {
-		l.Error(err.Error())
+		// For all other errors, print the error message and exit with code 1.
+		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		logger.Debugf("%+v\n", err)
 		os.Exit(1)
 	}
-
-	defer func() {
-		if opts.TerraformCliArgs.Contains(tf.FlagNameDetailedExitCode) {
-			errors.Recover(checkForErrorsAndExit(l, exitCode.GetFinalDetailedExitCode()))
-			return
-		}
-
-		errors.Recover(checkForErrorsAndExit(l, exitCode.GetFinalExitCode()))
-	}()
-
-	app := cli.NewApp(l, opts)
-
-	ctx := setupContext(l, exitCode)
-	err := app.RunContext(ctx, os.Args)
-
-	if opts.TerraformCliArgs.Contains(tf.FlagNameDetailedExitCode) {
-		checkForErrorsAndExit(l, exitCode.GetFinalDetailedExitCode())(err)
-
-		return
-	}
-
-	checkForErrorsAndExit(l, exitCode.GetFinalExitCode())(err)
 }
 
-// If there is an error, display it in the console and exit with a non-zero exit code. Otherwise, exit 0.
-func checkForErrorsAndExit(l log.Logger, exitCode int) func(error) {
-	return func(err error) {
-		if err == nil {
-			os.Exit(exitCode)
-		}
-
-		l.Error(err.Error())
-
-		if errStack := errors.ErrorStack(err); errStack != "" {
-			l.Trace(errStack)
-		}
-
-		// exit with the underlying error code
-		exitCoder, exitCodeErr := util.GetExitCode(err)
-		if exitCodeErr != nil {
-			exitCoder = 1
-		}
-
-		if explain := shell.ExplainError(err); len(explain) > 0 {
-			l.Errorf("Suggested fixes: \n%s", explain)
-		}
-
-		os.Exit(exitCoder)
-	}
-}
-
-func setupContext(l log.Logger, exitCode *tf.DetailedExitCodeMap) context.Context {
-	ctx := context.Background()
-	ctx = tf.ContextWithDetailedExitCode(ctx, exitCode)
-
-	return log.ContextWithLogger(ctx, l)
+// runApp initializes and runs the Terragrunt CLI application.
+// It accepts the command-line arguments and a logger instance.
+func runApp(args []string, logger *util.TerragruntLogger) error {
+	// Build the CLI app with the current version.
+	app := cli.CreateTerragruntCli(VERSION, os.Stdout, os.Stderr)
+	return app.Run(args)
 }
