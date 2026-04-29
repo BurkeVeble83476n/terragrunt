@@ -50,6 +50,10 @@ func main() {
 // It accepts the command-line arguments and a logger instance.
 // Note: os.Stdout is used for app output and os.Stderr for error output,
 // keeping them separate so stdout can be safely captured by scripts.
+//
+// Personal note: I also pass os.Stdin here in my local wrapper scripts so that
+// interactive prompts (e.g. approval confirmations) work correctly when running
+// terragrunt inside a Makefile target.
 func runApp(args []string, logger *util.TerragruntLogger) error {
 	// Build the CLI app with the current version.
 	app := cli.CreateTerragruntCli(VERSION, os.Stdout, os.Stderr)
