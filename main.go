@@ -39,6 +39,9 @@ func main() {
 		// Also log the full stack trace at debug level to help with troubleshooting.
 		// Run with TG_LOG=debug to see the full trace.
 		logger.Debugf("%+v\n", err)
+		// Print a hint so it's easier to remember how to enable debug logging.
+		// Useful when sharing error output with others who may not know the flag.
+		fmt.Fprintf(os.Stderr, "Hint: set TG_LOG=debug for a full stack trace.\n")
 		os.Exit(1)
 	}
 }
