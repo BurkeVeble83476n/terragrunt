@@ -39,12 +39,9 @@ func main() {
 		// Also log the full stack trace at debug level to help with troubleshooting.
 		// Run with TG_LOG=debug to see the full trace.
 		logger.Debugf("%+v\n", err)
-		// Print a hint so it's easier to remember how to enable debug logging.
-		// Useful when sharing error output with others who may not know the flag.
-		fmt.Fprintf(os.Stderr, "Hint: set TG_LOG=debug for a full stack trace.\n")
-		// Also print a reminder about the --terragrunt-log-level flag as an
-		// alternative to the env var, since I always forget which one to use.
-		fmt.Fprintf(os.Stderr, "Hint: alternatively, use --terragrunt-log-level debug\n")
+		// Print a single consolidated hint instead of two separate ones.
+		// Easier to read at a glance when something goes wrong.
+		fmt.Fprintf(os.Stderr, "Hint: set TG_LOG=debug (or --terragrunt-log-level debug) for a full stack trace.\n")
 		os.Exit(1)
 	}
 }
