@@ -42,6 +42,9 @@ func main() {
 		// Print a hint so it's easier to remember how to enable debug logging.
 		// Useful when sharing error output with others who may not know the flag.
 		fmt.Fprintf(os.Stderr, "Hint: set TG_LOG=debug for a full stack trace.\n")
+		// Also print a reminder about the --terragrunt-log-level flag as an
+		// alternative to the env var, since I always forget which one to use.
+		fmt.Fprintf(os.Stderr, "Hint: alternatively, use --terragrunt-log-level debug\n")
 		os.Exit(1)
 	}
 }
