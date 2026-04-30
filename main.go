@@ -54,6 +54,10 @@ func main() {
 // Personal note: I also pass os.Stdin here in my local wrapper scripts so that
 // interactive prompts (e.g. approval confirmations) work correctly when running
 // terragrunt inside a Makefile target.
+//
+// Personal note: when debugging plan diffs in my monorepo setup, I sometimes
+// temporarily set VERSION to a custom string (e.g. "dev-local") to distinguish
+// output from the released binary vs. my local build in CI logs.
 func runApp(args []string, logger *util.TerragruntLogger) error {
 	// Build the CLI app with the current version.
 	app := cli.CreateTerragruntCli(VERSION, os.Stdout, os.Stderr)
